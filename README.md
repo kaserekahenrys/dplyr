@@ -31,7 +31,7 @@ travel start and end dates; destination; purpose of travel; and actual total exp
 
 ###
 
-Link1 : https://medium.com/henryskasereka/how-to-use-the-dplyr-package-in-r-programming-by-a-practical-example-af0b65e1be3d
+Link1 : https://rpubs.com/henryskas/708391
 
 Link2 : https://medium.com/henryskasereka/how-to-use-the-dplyr-package-in-r-programming-by-a-practical-example-af0b65e1be3d
 

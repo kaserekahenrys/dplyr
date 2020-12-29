@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/708391/a2d245c43fd049f1959ff5911ec0c8a3
+bundleId: https://api.rpubs.com/api/v1/document/708391/a2d245c43fd049f1959ff5911ec0c8a3
+url: http://rpubs.com/henryskas/708391
+when: 1609246076.97282

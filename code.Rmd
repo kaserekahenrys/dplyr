@@ -1,0 +1,260 @@
+---
+title: "How to use the dplyr library in r programming by a practical example"
+author: "henrys kasereka"
+date: "December 29 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# What is dplyr?
+
+dplyr is a powerful library for manipulating data frames in r programming providing a consistent set of verbs that help you solve the most common data manipulation problems.
+
+### Functionalities
+
+    • mutate() adds new variables that are functions of existing variables 
+    • select() picks variables based on their names. 
+    • filter() picks cases based on their values. 
+    • summarise() reduces multiple values down to a single summary. 
+    • arrange() changes the ordering of the rows.
+    
+### Introduction
+
+When you’re working with data, you need to figure out what you want to do, describe those tasks in the form of a computer program, and run the program.
+The dplyr package makes these steps quick and easy:
+
+    • By limiting your options, it helps you think through your data manipulation challenges.
+    • It provides simple "verbs," functions that correspond to the most common data manipulation tasks, to help you translate your thoughts into code.
+    • It uses efficient backends so you spend less time waiting on the computer.
+    
+# Getting Started
+## Dplyr
+
+The first step is to install the dplyr package to load the package into memory
+
+```{r, echo=TRUE}
+library(dplyr)
+```
+## Data
+
+To explore the functionalities of dplyr, we will use the  data come from  [data.gov](https://catalog.data.gov/dataset/employee-travel-data-non-local). This dataset provides information regarding the total approved actual expenses incurred by Montgomery County government employees traveling non-locally (over 75 miles from the County’s Executive Office Building at 101 Monroe St. Rockville, MD) for official business, beginning on or after August 12, 2015. The dataset includes the name of traveling employee; the employee’s home department; travel start and end dates; destination; purpose of travel; and actual total expenses funded by the County. Update Frequency: Monthly 
+
+## Load data
+```{r, echo=TRUE}
+library(readr)
+employee <- read_csv("Employee_Travel_Data__Non-Local_.csv")
+```
+Overvier of data.
+```{r, echo=TRUE}
+head(employee, n=10)
+```
+
+# Preparing data for analysis
+
+Based on the data we've chosen, we're just assuming to do a few things before analysing. If you can observe there is same columns (`Travel Start Date`, `Travel End Date`, etc) which have composite name,  we can rename them. And we will want to split  Travel Start Date to allow us more analysis.
+
+## Renaming columns with rename()
+
+```{r, echo=TRUE}
+##Rename column in r
+employee <- employee %>% 
+  rename(
+   travel_start_date = `Travel Start Date`,
+   travel_start_end = `Travel End Date`,
+   purpose_Of_ravel = `Purpose Of Travel`,
+   actual_total_xpenses = `Actual Total Expenses`
+  )
+```
+
+```{r, echo=TRUE}
+head(employee, n=10)
+```
+
+## Split date and use mutate()
+
+But before we split the date, we suppose to add a new library that works with dplyr. He calls Lubridate. How important is it to do that same time that you may need to do your analysis based on the year, month, or day in this case you are assuming to split the date.
+
+```{r, echo=TRUE}
+## Split Travel Start Date 
+library(lubridate)
+
+employee <- employee %>% mutate(year_s_d = year(travel_start_date), 
+                month_s_d = month(travel_start_date), 
+                day_s_d = day(travel_start_date))
+```
+
+```{r, echo=TRUE}
+head(employee, n=10)
+```
+## Select same columns with select()
+
+You often work with large datasets that have many columns, but only a few are really of interest to you. select () allows you to quickly zoom in on a useful subset using operations that usually only work on numeric variable positions. In this case you have only destination, purpose of travel date which we split and  actual total expenses. You can look also is possible to rename the column using select() function.
+
+```{r, echo=TRUE}
+employee <- employee %>%  select(Department, 
+                      destination = `Destination(s)`, 
+                      purpose_Of_ravel, 
+                     year_s_d,
+                     month_s_d,
+                    day_s_d,
+                    actual_total_xpenses
+)
+
+```
+
+
+```{r, echo=TRUE}
+head(employee, n=10)
+```
+# Exploratory data
+
+After preparing our data, we can use same advance functions of dplyr. Exploratory data analysis help us to analyzing and visualizing data to better understand and gain insight into the data.
+
+Which kind of question we can answer according to the data we have:
+
+    • Departments which spend a lot of money for traveling
+    • The currents destination based on mean of money spending
+    • Make a grouping by year to know the amount max spent
+    • .etc
+
+We will use :
+
+    • summarize() 
+    • group_by() 
+    • arrange()
+
+The summerise () function without group_by () makes no sense. It creates summary statistics by group. The dplyr library automatically applies a function to the group you passed in the group_by verb. We use desc() to sort a variable in descending order.
+
+## Analysis and plotting
+
+### 10 Departments which spend a lot of money for traveling
+
+```{r, echo=TRUE}
+gr_employee_sum <- employee %>% group_by(Department)%>%
+  summarize( actual_total_xpenses = sum(actual_total_xpenses, na.rm = TRUE)) %>%
+  arrange(desc(actual_total_xpenses))
+```
+```{r, echo=TRUE}
+head(gr_employee_sum, n=10)
+```
+Plot
+
+```{r, echo=TRUE}
+library(ggplot2)
+ggplot(gr_employee_sum, aes(x=reorder(Department,actual_total_xpenses), y=(actual_total_xpenses))) + geom_bar(stat="Identity", fill="#4AA02C",color="darkred")+
+  xlab("Actual Total Expenses") + ylab("Frequency")+
+  ggtitle("Actual Total Expenses by Department")+
+  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+### 10 currents destinations based of mean of money spending
+
+```{r, echo=TRUE}
+gr_destination_mean <- employee %>% group_by(destination)%>%
+  summarise( actual_total_xpenses = mean(actual_total_xpenses, na.rm = TRUE)) %>%
+  arrange(desc(actual_total_xpenses)) %>%
+  rename(
+    mean_expenses = `actual_total_xpenses`
+  )
+head(gr_destination_mean)
+```
+
+### Make a grouping by year to know the max amount spent
+
+```{r, echo=TRUE}
+gr_year_max <- employee %>% group_by(year_s_d)%>%
+  summarise( actual_total_xpenses = max(actual_total_xpenses, na.rm = TRUE)) %>%
+  arrange(desc(year_s_d)) %>%
+  rename(
+    max_amount_expenses = `actual_total_xpenses`
+)
+head(gr_year_max)
+```
+Plot
+
+```{r, echo=TRUE}
+ggplot(gr_year_max, aes(x="", y=max_amount_expenses, fill=year_s_d)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  theme_void()
+```
+## Use filter to get a subset for a specific year
+
+filter () allows you to subsets of observations based on their values. The first argument is the name of the data block. The second and subsequent arguments are the expressions that filter the data block.
+
+```{r, echo=TRUE}
+##get only subset for 2015
+employee2015 <- employee %>% filter(year_s_d == 2015)
+```
+
+```{r, echo=TRUE}
+head(employee2015)
+```
+Now can answer some question like
+
+    • Money spending by month in specific year
+    • Money spending by day for specific month in specific year
+    • Money spending by purpose of travel in specific year
+    • .etc
+
+### Money spending by month in 2015
+
+```{r, echo=TRUE}
+gr_employee_sum_2015 <- employee2015 %>% group_by(month_s_d)%>%
+summarize( actual_total_xpenses = sum(actual_total_xpenses, na.rm = TRUE)) %>%
+arrange(desc(month_s_d))
+head(gr_employee_sum_2015)
+```
+### Money spending by day for specific month
+
+```{r, echo=TRUE}
+employee2015_day <- employee2015 %>%
+filter(month_s_d == 7) %>%
+group_by(day_s_d) %>%
+summarise(actual_total_xpenses = sum(actual_total_xpenses, na.rm = TRUE))
+```
+```{r, echo=TRUE}
+head(gr_employee_sum_2015)
+```
+Plot
+
+```{r, echo=TRUE}
+pie(employee2015_day$actual_total_xpenses)
+ggplot(data = employee2015_day, aes(x = "", y = actual_total_xpenses, fill = day_s_d)) + 
+  geom_bar(stat = "identity") + 
+  coord_polar("y")
+```
+
+### Money spending by purpose of travel in specific year
+
+```{r, echo=TRUE}
+gr_purpose_sum_2015 <- employee2015 %>% group_by(purpose_Of_ravel)%>%
+  summarise( actual_total_xpenses = sum(actual_total_xpenses, na.rm = TRUE)) %>%
+  arrange(desc(purpose_Of_ravel))
+```
+
+```{r, echo=TRUE}
+head(gr_purpose_sum_2015, n=10)
+```
+Plot
+
+```{r, echo=TRUE}
+gr_purpose_sum_2015  %>%
+ggplot(aes(x = purpose_Of_ravel, y = actual_total_xpenses, fill = purpose_Of_ravel)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  labs(
+    x = "Purpose Of Travel",
+    y = "Actual Total Epenses",
+    title = paste(
+      "Purpose Of Travel by actual total expenses 2015"
+    )
+  )+
+  theme(axis.text.x=element_text(angle=45, hjust=1))
+```
+# Conclusion
+
+The goal of our tutorial was to explore different aspects of dplyr. Show the power of this library in exploratory data analysis. We haven't covered all aspects of dplyr but the one we describe shows the gist of this library. Thank you, your contribution will be welcome.
